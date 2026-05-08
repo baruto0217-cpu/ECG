@@ -593,7 +593,7 @@ function beat(o={}){
     p_h=2.0,p_neg=false,no_p=false,
     pr=14,qrs=8,
     q_depth=0.28,r_h=12,s_depth=2,r_neg=false,
-    rsrp=false,m_wave=false,qs=false,abnq=false,delta=false,
+    rsrp=false,m_wave=false,qs=false,abnq=false,delta=false,delta_neg=false,
     st=0,st_type='iso',  // 'iso','rise','depress','mild_dep'
     t_h=4,t_w=20,
     saw_f=false,noise=0
@@ -621,7 +621,16 @@ function beat(o={}){
       else{
         if(abnq) y-=g(qi,qrs*.15,qrs*.13,Math.max(q_depth,r_h*.33)); else y-=g(qi,qrs*.08,qrs*.055,q_depth);
         y+=g(qi,qrs*.42,qrs*.15,r_h);
-        if(delta){const ds=Math.min(qi/(qrs*.35),1)*(r_h*.4); y+=ds*(1-Math.min((qi-qrs*.35)/(qrs*.2),1)*2);}
+        if(delta){
+          // A型WPW：デルタ波上向き（ケント束が左房〜左室）
+          const ds=Math.min(qi/(qrs*.35),1)*(r_h*.4);
+          y+=ds*(1-Math.min((qi-qrs*.35)/(qrs*.2),1)*2);
+        }
+        if(delta_neg){
+          // B型WPW：デルタ波下向き（ケント束が右房〜右室）
+          const ds=Math.min(qi/(qrs*.35),1)*(r_h*.4);
+          y-=ds*(1-Math.min((qi-qrs*.35)/(qrs*.2),1)*2);
+        }
         y-=g(qi,qrs*.76,qrs*.11,s_depth);
       }
     }
@@ -945,11 +954,17 @@ const diseases=[
    pWave:()=>{const r=chbStrip(CW);return r.p;},
    details:[['実波形の特徴','P波（赤▼）約85/分・QRS（黄▼）約35/分。P波rateはQRS rateより必ず早い'],['P-QRS完全解離','P波とQRS波は完全に独立。PQ間隔が毎回異なる（対応なし）'],['QRS','幅広補充調律（ヒス束下起源・30〜50/分）。P波より著明に遅い'],['症状','失神（Stokes-Adams発作）・著明な徐脈・意識消失'],['原因','下壁梗塞（RCA）・薬剤（ジギタリス・β遮断薬）・特発性'],['対応','経皮→経静脈一時ペーシング→永久ペースメーカ']]},
 
-  {id:'wpw',cat:'other',name:'WPW症候群',sub:'短縮PQ・デルタ波・幅広QRS',
+  {id:'wpw_a',cat:'other',name:'WPW症候群 A型',sub:'ケント束が左房〜左室 / V1でデルタ波上向き・R波優位',
    tag:'副伝導路',tagC:'#e8e4fc',tagT:'#2e1e80',
-   lbls:[{t:'デルタ波',c:'#e8e4fc',tc:'#2e1e80'},{t:'PQ≤120ms',c:'#e8e4fc',tc:'#2e1e80'}],
-   gen:()=>mkS(ox=>beat({ox,rr:RR,p_h:2.5,pr:10,qrs:13,r_h:15,s_depth:2,t_h:5.5,delta:true,st_type:'iso'})),
-   details:[['PQ間隔','≤120ms（副伝導路による早期興奮で短縮）'],['デルタ波','QRS開始部のスロープ状変化'],['最大危険','Af合併→副伝導路を高速伝導→VF移行→突然死'],['禁忌','WPW-AfへのVerapamil・Digitalis・β遮断薬（VF誘発）'],['治療','カテーテルアブレーション（根治）']]},
+   lbls:[{t:'デルタ波（上向き）',c:'#e8e4fc',tc:'#2e1e80'},{t:'PQ≤120ms',c:'#e8e4fc',tc:'#2e1e80'},{t:'V1でR波優位',c:'#e8e4fc',tc:'#2e1e80'}],
+   gen:()=>mkS(ox=>beat({ox,rr:RR,p_h:2.2,pr:10,qrs:14,r_h:16,s_depth:3,t_h:5.5,delta:true,st_type:'iso'})),
+   details:[['A型の特徴','ケント束が左房〜左室。V1でデルタ波が上向き→R波優位（後壁・側壁の副伝導路）'],['PQ間隔','≤120ms（副伝導路による早期興奮で短縮）'],['デルタ波','QRS開始部の上向きスロープ。ΔQRSが前方（右室方向）を向く'],['最大危険','Af合併→副伝導路を高速伝導→VF移行→突然死'],['禁忌','WPW-AfへのVerapamil・Digitalis・β遮断薬（VF誘発）'],['治療','カテーテルアブレーション（根治）']]},
+
+  {id:'wpw_b',cat:'other',name:'WPW症候群 B型',sub:'ケント束が右房〜右室 / V1でデルタ波下向き・S波優位（QS型）',
+   tag:'副伝導路',tagC:'#e8e4fc',tagT:'#2e1e80',
+   lbls:[{t:'デルタ波（下向き）',c:'#e8e4fc',tc:'#2e1e80'},{t:'PQ≤120ms',c:'#e8e4fc',tc:'#2e1e80'},{t:'V1でQS型',c:'#e8e4fc',tc:'#2e1e80'}],
+   gen:()=>mkS(ox=>beat({ox,rr:RR,p_h:2.2,pr:10,qrs:14,r_h:6,s_depth:14,t_h:5.5,delta_neg:true,st_type:'iso'})),
+   details:[['B型の特徴','ケント束が右房〜右室。V1でデルタ波が下向き→QS型（前壁・中隔の副伝導路）'],['PQ間隔','≤120ms（副伝導路による早期興奮で短縮）'],['デルタ波','QRS開始部の下向きスロープ。LBBBに類似した波形になることがある'],['A型との鑑別','V1のデルタ波の向き：A型=上向き（R優位）/ B型=下向き（QS型）'],['最大危険','Af合併→副伝導路を高速伝導→VF移行→突然死。A型もB型も同様'],['治療','カテーテルアブレーション（根治）']]},
 
   {id:'hyperk',cat:'other',name:'高カリウム血症',sub:'テント状T波・P波消失・QRS幅広・徐脈（K=7.8の実波形）',
    tag:'電解質異常',tagC:'#fffbf0',tagT:'#5a3800',
